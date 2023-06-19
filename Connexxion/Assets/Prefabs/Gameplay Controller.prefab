@@ -44,3 +44,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   dots: []
+  connections: []
+  chosenDot: {fileID: 0}
+  chosenDot2: {fileID: 0}
+  connectionPrefab: {fileID: 4033902423205400078, guid: da45409732b94ab439f72bf8f93f3a7e,
+    type: 3}
