@@ -7,7 +7,7 @@ public class GameplayControllerScript : MonoBehaviour
 {
     public static GameplayControllerScript instance;
     public GameObject[] dots;
-    public List<LineRenderer> connections;
+    public List<GameObject[]> connections;
     public GameObject mouseConnection;
     public GameObject chosenDot;
     public GameObject chosenDot2;
@@ -16,6 +16,7 @@ public class GameplayControllerScript : MonoBehaviour
     private GameObject connectionPrefab;
 
     private bool plausibleLine;
+    private bool compatibleConnection;
     
     private void Start()
     {
@@ -24,10 +25,13 @@ public class GameplayControllerScript : MonoBehaviour
 
         DontDestroyOnLoad(this.gameObject);
 
-        GetAllDots();
+        getAllDots();
+
+        connections = new List<GameObject[]>();
 
         mouseConnection = null;
         plausibleLine = true;
+        compatibleConnection = true;
     }
 
     private void Update()
@@ -35,12 +39,12 @@ public class GameplayControllerScript : MonoBehaviour
         GetMouse();   
     }
 
-    public void DotSelected(string type, GameObject dot)
+    public void DotSelected(GameObject dot)
     {
         chosenDot = dot;
     }
 
-    public void DotHover(string type, GameObject dot)
+    public void DotHover(GameObject dot)
     {
         chosenDot2 = dot;
     }
@@ -64,7 +68,7 @@ public class GameplayControllerScript : MonoBehaviour
     {
         if(Input.GetMouseButtonUp(0))
         {
-            if(chosenDot != null && chosenDot2 != null && plausibleLine)
+            if(chosenDot != null && chosenDot2 != null && chosenDot != chosenDot2 && compatibleConnection && checkPreviousConnections(chosenDot, chosenDot2))
             {
                 GameObject line = Instantiate(connectionPrefab);
                 LineRenderer lineRend = line.GetComponent<LineRenderer>();
@@ -72,16 +76,28 @@ public class GameplayControllerScript : MonoBehaviour
                 lineRend.gameObject.SetActive(true);
                 Vector3 sp = chosenDot.transform.position;
                 Vector3 ep = chosenDot2.transform.position;
+                ep.z = sp.z;
                 lineRend.SetPosition(0, sp);
                 lineRend.SetPosition(1, ep);
 
                 PolygonCollider2D collider = lineRend.GetComponent<PolygonCollider2D>();
-                collider.points = new[] { new Vector2(sp.x + 0.1f, sp.y + 0.1f), new Vector2(ep.x + 0.1f, ep.y + 0.1f), new Vector2(ep.x - 0.1f, ep.y - 0.1f), new Vector2(sp.x - 0.1f, sp.y - 0.1f) };
+                collider.points = new[] { new Vector2(sp.x + 0.01f, sp.y + 0.01f), new Vector2(ep.x + 0.01f, ep.y + 0.01f), new Vector2(ep.x - 0.01f, ep.y - 0.01f), new Vector2(sp.x - 0.01f, sp.y - 0.01f) };
 
-                connections.Add(lineRend);
+                GameObject[] info = new GameObject[3];
+                info[0] = lineRend.gameObject;
+                info[1] = chosenDot;
+                info[2] = chosenDot2;
+                connections.Add(info);
+
+                chosenDot.gameObject.GetComponent<DotScript>().AddConnection();
+                chosenDot2.gameObject.GetComponent<DotScript>().AddConnection();
             }
 
-            if (mouseConnection != null) mouseConnection.SetActive(false);
+            if (mouseConnection != null)
+            {
+                mouseConnection.SetActive(false);
+                mouseConnection.GetComponent<ConnectionScript>().clearCollisions();
+            }
             chosenDot = null;
             chosenDot2 = null;
         }
@@ -102,11 +118,19 @@ public class GameplayControllerScript : MonoBehaviour
                 line.SetPosition(0, sp);
                 line.SetPosition(1, ep);
 
+                if(chosenDot2 != null)
+                {
+                    DotScript cd1script = chosenDot.GetComponent<DotScript>();
+                    DotScript cd2script = chosenDot2.GetComponent<DotScript>();
+
+                    compatibleConnection = checkDotMetadata(cd1script, cd2script) && checkDotMetadata(cd2script, cd1script) && plausibleLine;
+                }
+
                 if (plausibleLine && chosenDot2 == null) { line.startColor = Color.grey; line.endColor = Color.grey; }
-                else if (plausibleLine) { line.startColor = Color.white; line.endColor = Color.white; }
+                else if (compatibleConnection) { line.startColor = Color.white; line.endColor = Color.white; }
                 else { line.startColor = Color.red; line.endColor = Color.red; }
 
-                collider.points = new[] { new Vector2(sp.x + 0.1f, sp.y + 0.1f), new Vector2(ep.x + 0.1f, ep.y + 0.1f), new Vector2(ep.x - 0.1f, ep.y - 0.1f), new Vector2(sp.x - 0.1f, sp.y - 0.1f) };
+                collider.points = new[] { new Vector2(sp.x + 0.01f, sp.y + 0.01f), new Vector2(ep.x + 0.01f, ep.y + 0.01f), new Vector2(ep.x - 0.01f, ep.y - 0.01f), new Vector2(sp.x - 0.01f, sp.y - 0.01f) };
             }
         }
 
@@ -114,16 +138,48 @@ public class GameplayControllerScript : MonoBehaviour
         {
             if(connections.Count != 0)
             {
-                LineRenderer lastConnection = connections[connections.Count - 1];
+                GameObject[] lastConnection = connections[connections.Count - 1];
                 connections.Remove(lastConnection);
-                Destroy(lastConnection.gameObject);
+                lastConnection[1].GetComponent<DotScript>().RemoveConnection();
+                lastConnection[2].GetComponent<DotScript>().RemoveConnection();
+                Destroy(lastConnection[0]);
             }
         }
     }
 
-    private void GetAllDots()
+    private bool checkDotMetadata(DotScript d1, DotScript d2)
     {
-        Transform canvas = GameObject.Find("Dots Canvas").transform;
+        if (d1.color == "black" && d2.color != "black") return false;
+        else if(d1.color == "blue" && d2.color != "blue" && d2.color != "green" && d2.color != "purple" && d2.color != "white") return false;
+        else if(d1.color == "green" && d2.color != "green" && d2.color != "blue" && d2.color != "yellow" && d2.color != "white") return false;
+        else if(d1.color == "yellow" && d2.color != "yellow" && d2.color != "green" && d2.color != "orange" && d2.color != "white") return false;
+        else if(d1.color == "red" && d2.color != "red" && d2.color != "orange" && d2.color != "purple" && d2.color != "white") return false;
+        else if(d1.color == "orange" && d2.color != "orange" && d2.color != "red" && d2.color != "yellow" && d2.color != "white") return false;
+        else if(d1.color == "purple" && d2.color != "purple" && d2.color != "red" && d2.color != "blue" && d2.color != "white") return false;
+
+        return true;
+    }
+
+    private bool checkPreviousConnections(GameObject d1, GameObject d2)
+    {
+        for(int i = 0; i < connections.Count; i++)
+        {
+            int similar = 0;
+            GameObject[] conn = connections[i];
+
+            if (conn[1] == d1) similar += 1;
+            if (conn[2] == d1) similar += 1;
+            if (conn[1] == d2) similar += 1;
+            if (conn[2] == d2) similar += 1;
+            if (similar >= 2) return false;
+        }
+
+        return true;
+    }
+
+    private void getAllDots()
+    {
+        Transform canvas = GameObject.Find("Dots").transform;
         dots = new GameObject[canvas.childCount];
         for (int i = 0; i < dots.Length; i++)
         {

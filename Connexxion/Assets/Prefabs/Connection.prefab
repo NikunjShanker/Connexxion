@@ -75,9 +75,9 @@ LineRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingLayerID: 1450689755
+  m_SortingLayer: -1
+  m_SortingOrder: 10
   m_Positions:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 1}
@@ -89,7 +89,7 @@ LineRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0.0986525
-        value: 0.3487501
+        value: 0.15047741
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -161,10 +161,10 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 0.16297807, y: 0.5368927}
-      - {x: 0.47132885, y: -0.035173774}
-      - {x: -0.47552827, y: 0.15450849}
-      - {x: -0.4847954, y: 0.63246244}
+    - - {x: 0, y: 0.001}
+      - {x: 0, y: 0.001}
+      - {x: 0.001, y: 0}
+      - {x: 0.001, y: 0}
 --- !u!50 &1282857120056748817
 Rigidbody2D:
   serializedVersion: 4

@@ -4,28 +4,56 @@ using UnityEngine;
 
 public class ConnectionScript : MonoBehaviour
 {
-    private bool recognized;
+    private bool impossRecognized;
+    private bool possRecognized;
+
+    private List<GameObject> dotCollisionObjects;
 
     private void Start()
     {
-        recognized = false;
+        impossRecognized = false;
+        possRecognized = true;
+        dotCollisionObjects = new List<GameObject>();
     }
 
-    private void OnTriggerStay2D(Collider2D collision)
+    private void Update()
     {
-        if(!recognized && collision.tag == "Connection")
+        if(dotCollisionObjects.Count >= 3 && !impossRecognized)
         {
+            impossRecognized = true;
+            possRecognized = false;
             GameplayControllerScript.instance.ImpossibleLine();
-            recognized = true;
+        }
+        
+        if(dotCollisionObjects.Count < 3 && !possRecognized)
+        {
+            possRecognized = true;
+            impossRecognized = false;
+            GameplayControllerScript.instance.PossibleLine();
+        }
+    }
+
+    public void clearCollisions()
+    {
+        dotCollisionObjects.Clear();
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if(collision.tag == "Circle")
+        {
+            if(!dotCollisionObjects.Contains(collision.gameObject))
+            {
+                dotCollisionObjects.Add(collision.gameObject);
+            }
         }
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if (recognized && collision.tag == "Connection")
+        if (collision.tag == "Circle")
         {
-            GameplayControllerScript.instance.PossibleLine();
-            recognized = false;
+            dotCollisionObjects.Remove(collision.gameObject);
         }
     }
 }
