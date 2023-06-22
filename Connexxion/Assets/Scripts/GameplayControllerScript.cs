@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 public class GameplayControllerScript : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class GameplayControllerScript : MonoBehaviour
 
     [SerializeField]
     private GameObject connectionPrefab;
+    [SerializeField]
+    private GameObject squareConnectionPrefab;
 
     private bool plausibleLine;
     private bool compatibleConnection;
@@ -36,7 +39,9 @@ public class GameplayControllerScript : MonoBehaviour
 
     private void Update()
     {
-        GetMouse();   
+        GetMouse();
+
+        if (Input.GetKeyDown(KeyCode.R)) SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void DotSelected(GameObject dot)
@@ -70,7 +75,20 @@ public class GameplayControllerScript : MonoBehaviour
         {
             if(chosenDot != null && chosenDot2 != null && chosenDot != chosenDot2 && compatibleConnection && checkPreviousConnections(chosenDot, chosenDot2))
             {
-                GameObject line = Instantiate(connectionPrefab);
+                DotScript cd1script = chosenDot.GetComponent<DotScript>();
+                DotScript cd2script = chosenDot2.GetComponent<DotScript>();
+
+                GameObject line;
+
+                if (cd1script.shape == "square" || cd2script.shape == "square")
+                {
+                    line = Instantiate(squareConnectionPrefab);
+                }
+                else
+                {
+                    line = Instantiate(connectionPrefab);
+                }
+
                 LineRenderer lineRend = line.GetComponent<LineRenderer>();
 
                 lineRend.gameObject.SetActive(true);
@@ -80,8 +98,33 @@ public class GameplayControllerScript : MonoBehaviour
                 lineRend.SetPosition(0, sp);
                 lineRend.SetPosition(1, ep);
 
+                findNewColliderPositions(chosenDot.transform, chosenDot2.transform, out float posx, out float posy);
+                
+                if (cd1script.shape == "square")
+                {
+                    sp.x += posx * 0.4f;
+                    sp.y += posy * 0.4f;
+                }
+                else
+                {
+                    sp.x += posx * chosenDot.GetComponent<CircleCollider2D>().radius * 0.999f;
+                    sp.y += posy * chosenDot.GetComponent<CircleCollider2D>().radius * 0.999f;
+                }
+                
+                if (cd2script.shape == "square")
+                {
+                    ep.x -= posx * 0.4f;
+                    ep.y -= posy * 0.4f;
+                }
+                else
+                {
+                    ep.x -= posx * chosenDot2.GetComponent<CircleCollider2D>().radius * 0.999f;
+                    ep.y -= posy * chosenDot2.GetComponent<CircleCollider2D>().radius * 0.999f;
+                }
+
                 PolygonCollider2D collider = lineRend.GetComponent<PolygonCollider2D>();
-                collider.points = new[] { new Vector2(sp.x + 0.01f, sp.y + 0.01f), new Vector2(ep.x + 0.01f, ep.y + 0.01f), new Vector2(ep.x - 0.01f, ep.y - 0.01f), new Vector2(sp.x - 0.01f, sp.y - 0.01f) };
+                collider.points = new[] { new Vector2(sp.x + 0.001f, sp.y + 0.001f), new Vector2(ep.x + 0.001f, ep.y + 0.001f),
+                    new Vector2(ep.x - 0.001f, ep.y - 0.001f), new Vector2(sp.x - 0.001f, sp.y - 0.001f) };
 
                 GameObject[] info = new GameObject[3];
                 info[0] = lineRend.gameObject;
@@ -105,6 +148,14 @@ public class GameplayControllerScript : MonoBehaviour
         {
             if(chosenDot != null)
             {
+                if (chosenDot2 != null)
+                {
+                    DotScript cd1script = chosenDot.GetComponent<DotScript>();
+                    DotScript cd2script = chosenDot2.GetComponent<DotScript>();
+
+                    compatibleConnection = checkDotMetadata(cd1script, cd2script) && checkDotMetadata(cd2script, cd1script) && plausibleLine;
+                }
+
                 if (mouseConnection == null) mouseConnection = Instantiate(connectionPrefab); mouseConnection.tag = "Mouse Connection";
 
                 LineRenderer line = mouseConnection.GetComponent<LineRenderer>();
@@ -117,14 +168,6 @@ public class GameplayControllerScript : MonoBehaviour
 
                 line.SetPosition(0, sp);
                 line.SetPosition(1, ep);
-
-                if(chosenDot2 != null)
-                {
-                    DotScript cd1script = chosenDot.GetComponent<DotScript>();
-                    DotScript cd2script = chosenDot2.GetComponent<DotScript>();
-
-                    compatibleConnection = checkDotMetadata(cd1script, cd2script) && checkDotMetadata(cd2script, cd1script) && plausibleLine;
-                }
 
                 if (plausibleLine && chosenDot2 == null) { line.startColor = Color.grey; line.endColor = Color.grey; }
                 else if (compatibleConnection) { line.startColor = Color.white; line.endColor = Color.white; }
@@ -185,5 +228,16 @@ public class GameplayControllerScript : MonoBehaviour
         {
             dots[i] = canvas.GetChild(i).gameObject;
         }
+    }
+
+    private void findNewColliderPositions(Transform trans1, Transform trans2, out float posx, out float posy)
+    {
+        float angle = Mathf.Atan2(trans2.position.y - trans1.position.y, trans2.position.x - trans1.position.x);
+
+        posx = Mathf.Cos(angle);
+        posy = Mathf.Sin(angle);
+
+        if (posx < 0.001 && posx > -0.001) posx = 0;
+        if (posy < 0.001 && posy > -0.001) posy = 0;
     }
 }

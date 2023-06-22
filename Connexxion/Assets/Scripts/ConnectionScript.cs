@@ -4,33 +4,21 @@ using UnityEngine;
 
 public class ConnectionScript : MonoBehaviour
 {
-    private bool impossRecognized;
-    private bool possRecognized;
+    public bool impossRecognized;
+    public bool possRecognized;
 
-    private List<GameObject> dotCollisionObjects;
+    public List<GameObject> dotCollisionObjects;
 
-    private void Start()
+    public void Start()
     {
         impossRecognized = false;
         possRecognized = true;
         dotCollisionObjects = new List<GameObject>();
     }
 
-    private void Update()
+    public void Update()
     {
-        if(dotCollisionObjects.Count >= 3 && !impossRecognized)
-        {
-            impossRecognized = true;
-            possRecognized = false;
-            GameplayControllerScript.instance.ImpossibleLine();
-        }
-        
-        if(dotCollisionObjects.Count < 3 && !possRecognized)
-        {
-            possRecognized = true;
-            impossRecognized = false;
-            GameplayControllerScript.instance.PossibleLine();
-        }
+        checkCollisions();
     }
 
     public void clearCollisions()
@@ -38,20 +26,37 @@ public class ConnectionScript : MonoBehaviour
         dotCollisionObjects.Clear();
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    public void checkCollisions()
     {
-        if(collision.tag == "Circle")
+        if (dotCollisionObjects.Count >= 3 && !impossRecognized)
         {
-            if(!dotCollisionObjects.Contains(collision.gameObject))
+            impossRecognized = true;
+            possRecognized = false;
+            GameplayControllerScript.instance.ImpossibleLine();
+        }
+
+        if (dotCollisionObjects.Count < 3 && !possRecognized)
+        {
+            possRecognized = true;
+            impossRecognized = false;
+            GameplayControllerScript.instance.PossibleLine();
+        }
+    }
+
+    public void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.tag == "Circle" || collision.tag == "Square")
+        {
+            if (!dotCollisionObjects.Contains(collision.gameObject))
             {
                 dotCollisionObjects.Add(collision.gameObject);
             }
         }
     }
 
-    private void OnTriggerExit2D(Collider2D collision)
+    public void OnTriggerExit2D(Collider2D collision)
     {
-        if (collision.tag == "Circle")
+        if (collision.tag == "Circle" || collision.tag == "Square")
         {
             dotCollisionObjects.Remove(collision.gameObject);
         }
