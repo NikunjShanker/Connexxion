@@ -201,3 +201,4 @@ MonoBehaviour:
   impossRecognized: 0
   possRecognized: 0
   dotCollisionObjects: []
+  connectionsCrossed: []

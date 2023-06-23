@@ -7,11 +7,18 @@ using UnityEngine.SceneManagement;
 public class GameplayControllerScript : MonoBehaviour
 {
     public static GameplayControllerScript instance;
+
     public GameObject[] dots;
     public List<GameObject[]> connections;
     public GameObject mouseConnection;
     public GameObject chosenDot;
     public GameObject chosenDot2;
+
+    private ParticleSystem connPS1;
+    private ParticleSystem connPS2;
+
+    public Color32 incorrectColor;
+    public Color32[] colorPalette = new Color32[8];
 
     [SerializeField]
     private GameObject connectionPrefab;
@@ -35,6 +42,11 @@ public class GameplayControllerScript : MonoBehaviour
         mouseConnection = null;
         plausibleLine = true;
         compatibleConnection = true;
+
+        connPS1 = GameObject.Find("Connection Particle System - Dot 1").GetComponent<ParticleSystem>();
+        connPS2 = GameObject.Find("Connection Particle System - Dot 2").GetComponent<ParticleSystem>();
+
+        setColorPalette();
     }
 
     private void Update()
@@ -98,6 +110,9 @@ public class GameplayControllerScript : MonoBehaviour
                 lineRend.SetPosition(0, sp);
                 lineRend.SetPosition(1, ep);
 
+                lineRend.startColor = assignColor(cd1script);
+                lineRend.endColor = assignColor(cd2script);
+
                 findNewColliderPositions(chosenDot.transform, chosenDot2.transform, out float posx, out float posy);
                 
                 if (cd1script.shape == "square")
@@ -123,14 +138,16 @@ public class GameplayControllerScript : MonoBehaviour
                 }
 
                 PolygonCollider2D collider = lineRend.GetComponent<PolygonCollider2D>();
-                collider.points = new[] { new Vector2(sp.x + 0.001f, sp.y + 0.001f), new Vector2(ep.x + 0.001f, ep.y + 0.001f),
-                    new Vector2(ep.x - 0.001f, ep.y - 0.001f), new Vector2(sp.x - 0.001f, sp.y - 0.001f) };
+                collider.points = new[] { new Vector2(sp.x + 0.01f, sp.y + 0.01f), new Vector2(ep.x + 0.01f, ep.y + 0.01f),
+                    new Vector2(ep.x - 0.01f, ep.y - 0.01f), new Vector2(sp.x - 0.01f, sp.y - 0.01f) };
 
                 GameObject[] info = new GameObject[3];
                 info[0] = lineRend.gameObject;
                 info[1] = chosenDot;
                 info[2] = chosenDot2;
                 connections.Add(info);
+
+                setOffParticleSystems(chosenDot, chosenDot2);
 
                 chosenDot.gameObject.GetComponent<DotScript>().AddConnection();
                 chosenDot2.gameObject.GetComponent<DotScript>().AddConnection();
@@ -171,9 +188,10 @@ public class GameplayControllerScript : MonoBehaviour
 
                 if (plausibleLine && chosenDot2 == null) { line.startColor = Color.grey; line.endColor = Color.grey; }
                 else if (compatibleConnection) { line.startColor = Color.white; line.endColor = Color.white; }
-                else { line.startColor = Color.red; line.endColor = Color.red; }
+                else { line.startColor = incorrectColor; line.endColor = incorrectColor; }
 
-                collider.points = new[] { new Vector2(sp.x + 0.01f, sp.y + 0.01f), new Vector2(ep.x + 0.01f, ep.y + 0.01f), new Vector2(ep.x - 0.01f, ep.y - 0.01f), new Vector2(sp.x - 0.01f, sp.y - 0.01f) };
+                collider.points = new[] { new Vector2(sp.x + 0.01f, sp.y + 0.01f), new Vector2(ep.x + 0.01f, ep.y + 0.01f),
+                    new Vector2(ep.x - 0.01f, ep.y - 0.01f), new Vector2(sp.x - 0.01f, sp.y - 0.01f) };
             }
         }
 
@@ -239,5 +257,53 @@ public class GameplayControllerScript : MonoBehaviour
 
         if (posx < 0.001 && posx > -0.001) posx = 0;
         if (posy < 0.001 && posy > -0.001) posy = 0;
+    }
+
+    private void setOffParticleSystems(GameObject pos1, GameObject pos2)
+    {
+        connPS1.transform.position = pos1.transform.position;
+        connPS2.transform.position = pos2.transform.position;
+
+        connPS1.startColor = assignColor(pos1.GetComponent<DotScript>());
+        connPS2.startColor = assignColor(pos2.GetComponent<DotScript>());
+
+        if (connPS1.isPlaying) connPS1.Stop();
+        if (connPS2.isPlaying) connPS2.Stop();
+        connPS1.Play();
+        connPS2.Play();
+    }
+
+    private Color32 assignColor(DotScript dot)
+    {
+        if (dot.color == "white") return colorPalette[0];
+        else if (dot.color == "red") return colorPalette[1];
+        else if (dot.color == "orange") return colorPalette[2];
+        else if (dot.color == "yellow") return colorPalette[3];
+        else if (dot.color == "green") return colorPalette[4];
+        else if (dot.color == "blue") return colorPalette[5];
+        else if (dot.color == "purple") return colorPalette[6];
+        else return colorPalette[7];
+    }
+
+    private void setColorPalette()
+    {
+        // White
+        colorPalette[0] = new Color32(255, 255, 255, 255);
+        // Red
+        colorPalette[1] = new Color32(198, 0, 0, 255);
+        // Orange
+        colorPalette[2] = new Color32(255, 121, 48, 255);
+        // Yellow
+        colorPalette[3] = new Color32(237, 216, 57, 255);
+        // Green
+        colorPalette[4] = new Color32(73, 170, 16, 255);
+        // Blue
+        colorPalette[5] = new Color32(97, 162, 255, 255);
+        // Purple
+        colorPalette[6] = new Color32(162, 113, 255, 255);
+        // Black
+        colorPalette[7] = new Color32(0, 0, 0, 255);
+        // Pink
+        incorrectColor = new Color32(255, 0, 255, 255);
     }
 }

@@ -29,9 +29,9 @@ public class SquareConnectionScript : ConnectionScript
         {
             crossRecognized = true;
             uncrossRecognized = false;
-            this.GetComponent<LineRenderer>().startColor = Color.red; this.GetComponent<LineRenderer>().endColor = Color.red; 
+            this.GetComponent<LineRenderer>().startColor = GameplayControllerScript.instance.incorrectColor; this.GetComponent<LineRenderer>().endColor = GameplayControllerScript.instance.incorrectColor;
         }
-        else if (connectionsCrossed.Count <= 0 && !uncrossRecognized)
+        else if (connectionsCrossed.Count == 0 && !uncrossRecognized)
         {
             crossRecognized = false;
             uncrossRecognized = true;
