@@ -15,13 +15,16 @@ public class UniversalScript : MonoBehaviour
         DontDestroyOnLoad(this.gameObject);
     }
 
-    public void MuteSounds()
+    public void completeLevel()
     {
-        mute = true;
+        if (SceneManager.GetActiveScene().buildIndex < 20)
+        {
+            SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex + 1);
+        }
     }
 
-    public void UnmuteSounds()
+    public void MuteToggle(bool m)
     {
-        mute = false;
+        mute = m;
     }
 }

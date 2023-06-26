@@ -9,6 +9,7 @@ TagManager:
   - Mouse Connection
   - Circle
   - Square
+  - Square Connection
   layers:
   - Default
   - TransparentFX
